@@ -38,8 +38,8 @@ public class HbaseDDL {
     }
 
     public static void main(String[] args) throws IOException {
-        createNamespace("mydb3");
-        //createTable("test1", "info", "name", "gender");
+        //createNamespace("mydb3");
+        createTable("","t1","info1","info2");
     }
 
     /**
@@ -65,34 +65,35 @@ public class HbaseDDL {
     /**
      * 创建表
      */
-    public static void createTable(String tableName, String... columnFamily) throws IOException {
-        if (isExists(tableName)) {
-            System.out.println(tableName + " 已存在！");
+    public static void createTable(String nameSpaceName, String tableName, String... columnFamily) throws IOException {
+        if (isExists(nameSpaceName, tableName)) {
+            System.err.println((nameSpaceName == null || "".equals(nameSpaceName) ? "default" : nameSpaceName) + ":" + tableName + " 已存在！");
         }
 
-        if (columnFamily.length <= 0) {
-            System.out.println("请添加列族！");
+        if (columnFamily.length < 1) {
+            System.err.println("请添加列族！");
             return;
         }
         // 2 创建DDL操作对象
         Admin admin = getAdmin();
         // 创建Table描述器
-        TableDescriptorBuilder tableDescriptorBuilder = TableDescriptorBuilder.newBuilder(TableName.valueOf(tableName));
+        TableDescriptorBuilder tableDescriptorBuilder = TableDescriptorBuilder.newBuilder(TableName.valueOf(nameSpaceName, tableName));
+
         // 循环添加列族
         for (String cf : columnFamily) {
             // 先构建列族描述器
             ColumnFamilyDescriptorBuilder columnFamilyDescriptorBuilder = ColumnFamilyDescriptorBuilder.newBuilder(Bytes.toBytes(cf));
+            ColumnFamilyDescriptor build = columnFamilyDescriptorBuilder.build();
             // 添加列族
-            tableDescriptorBuilder.setColumnFamily(columnFamilyDescriptorBuilder.build());
+            tableDescriptorBuilder.setColumnFamily(build);
         }
-        TableDescriptor build = tableDescriptorBuilder.build();
+        TableDescriptor tableDescriptor = tableDescriptorBuilder.build();
         try {
-            admin.createTable(build);
+            admin.createTable(tableDescriptor);
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
             admin.close();
-            connection.close();
         }
 
     }
@@ -100,12 +101,9 @@ public class HbaseDDL {
     /**
      * 判断表是否存在
      */
-    public static boolean isExists(String tableName) throws IOException {
+    public static boolean isExists(String nameSpaceName, String tableName) throws IOException {
         // 2 创建DDL操作对象
         Admin admin = getAdmin();
-        boolean exists = admin.tableExists(TableName.valueOf(tableName));
-        admin.close();
-        connection.close();
-        return exists;
+        return admin.tableExists(TableName.valueOf(nameSpaceName, tableName));
     }
 }
