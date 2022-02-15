@@ -12,6 +12,9 @@ import java.io.IOException;
  * @program: org.wfy.hadoop.hbase
  * @description Hbase操作练习
  * @create 2022-02-2022/2/14 13:38
+ * Connection : 通过ConnectionFactory获取. 是重量级实现.
+ * Table : 主要负责DML操作
+ * Admin : 主要负责DDL操作
  **/
 public class HbaseDDL {
     private static Configuration configuration;
@@ -40,7 +43,8 @@ public class HbaseDDL {
     public static void main(String[] args) throws IOException {
         //createNamespace("mydb3");
         //createTable("", "t1", "info1", "info2");
-        getData("mydb1", "student", "1001", "info", "name");
+        //getData("mydb1", "student", "1001", "info", "name");
+        scanData("mydb1","student","1001","1004");
     }
 
     /**
@@ -152,6 +156,39 @@ public class HbaseDDL {
             System.out.println(s);
         }
         table.close();
+    }
+
+    /**
+     * delete: 删除数据
+     */
+    public static void deleteData(String nameSpaceName, String tableName, String rowKey, String columnFamily, String column) throws IOException {
+        Table table = connection.getTable(TableName.valueOf(nameSpaceName, tableName));
+        Delete delete = new Delete(Bytes.toBytes(rowKey));
+        delete.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes(column));
+        table.delete(delete);
+        table.close();
+    }
+
+    /**
+     * scan: 查询数据
+     */
+    public static void scanData(String nameSpaceName, String tableName, String startRow, String stopRow) throws IOException {
+        final Table table = connection.getTable(TableName.valueOf(nameSpaceName, tableName));
+        final Scan scan = new Scan();
+        scan.withStartRow(Bytes.toBytes(startRow))
+                .withStopRow(Bytes.toBytes(stopRow));
+        final ResultScanner scanner = table.getScanner(scan);
+        for (Result result : scanner) {
+            final Cell[] cells = result.rawCells();
+            for (Cell cell : cells) {
+                String cellString = Bytes.toString(CellUtil.cloneRow(cell)) + "\t" +
+                        Bytes.toString(CellUtil.cloneFamily(cell)) + "\t" +
+                        Bytes.toString(CellUtil.cloneQualifier(cell)) + "\t" +
+                        Bytes.toString(CellUtil.cloneValue(cell));
+                System.out.println(cellString);
+            }
+            table.close();
+        }
     }
 
     /**
