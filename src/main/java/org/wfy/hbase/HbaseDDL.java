@@ -39,7 +39,7 @@ public class HbaseDDL {
 
     public static void main(String[] args) throws IOException {
         //createNamespace("mydb3");
-        createTable("","t1","info1","info2");
+        createTable("", "t1", "info1", "info2");
     }
 
     /**
@@ -97,6 +97,42 @@ public class HbaseDDL {
         }
 
     }
+
+    /**
+     * 删除表
+     */
+    public static void dropTable(String nameSpaceName, String tableName) throws IOException {
+        if (!isExists(nameSpaceName, tableName)) {
+            System.err.println(nameSpaceName + ":" + tableName + " 不存在，无需删除！");
+        }
+
+        Admin admin = getAdmin();
+        TableName tableName1 = TableName.valueOf(nameSpaceName, tableName);
+        // 删除前，先失效
+        admin.disableTable(tableName1);
+        // 执行删除操作
+        admin.deleteTable(tableName1);
+
+    }
+
+    /**
+     * put: 添加数据
+     *
+     * @param nameSpaceName 命名空间
+     * @param tableName     表名
+     * @param rowKey        主键
+     * @param columnFamily  列族
+     * @param columnName    列名
+     * @param value         值
+     */
+    public static void putData(String nameSpaceName, String tableName, String rowKey, String columnFamily, String columnName, String value) throws IOException {
+        Table table = connection.getTable(TableName.valueOf(nameSpaceName, tableName));
+        Put put = new Put(Bytes.toBytes(rowKey));
+        put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes(columnName), Bytes.toBytes(value));
+        table.put(put);
+        table.close();
+    }
+
 
     /**
      * 判断表是否存在
