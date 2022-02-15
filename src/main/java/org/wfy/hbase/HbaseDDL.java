@@ -39,7 +39,8 @@ public class HbaseDDL {
 
     public static void main(String[] args) throws IOException {
         //createNamespace("mydb3");
-        createTable("", "t1", "info1", "info2");
+        //createTable("", "t1", "info1", "info2");
+        getData("mydb1", "student", "1001", "info", "name");
     }
 
     /**
@@ -133,6 +134,25 @@ public class HbaseDDL {
         table.close();
     }
 
+    /**
+     * get: 获取数据
+     */
+    public static void getData(String nameSpaceName, String tableName, String rowKey, String columnFamily, String columnName) throws IOException {
+        Table table = connection.getTable(TableName.valueOf(nameSpaceName, tableName));
+        Get get = new Get(Bytes.toBytes(rowKey));
+        get.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes(columnName));
+        Result result = table.get(get);
+        Cell[] cells = result.rawCells();
+        for (Cell cell : cells) {
+            String s = tableName + "\t" +
+                    Bytes.toString(CellUtil.cloneRow(cell)) + "\t" +
+                    Bytes.toString(CellUtil.cloneFamily(cell)) + "\t" +
+                    Bytes.toString(CellUtil.cloneQualifier(cell)) + "\t" +
+                    Bytes.toString(CellUtil.cloneValue(cell));
+            System.out.println(s);
+        }
+        table.close();
+    }
 
     /**
      * 判断表是否存在
